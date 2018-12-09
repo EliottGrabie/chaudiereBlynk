@@ -45,7 +45,37 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 #include <BlynkSimpleEthernet.h>
 #include <TimeLib.h>
 #include <WidgetRTC.h>
+/*------D-Wido-----*/
+#include <Adafruit_CC3000.h>
+#include <ccspi.h>
+#include <SPI.h>
+#include <string.h>
+#include "utility/debug.h"
 
+#include <Ethernet.h>
+byte mac[] = { 0x00, 0x19, 0x94, 0x48, 0x06, 0xFF };
+byte ipE[] = { 10, 0, 0, 177 };
+EthernetClient client;
+
+// These are the interrupt and control pins
+#define ADAFRUIT_CC3000_IRQ   7  // MUST be an interrupt pin!
+// These can be any two pins
+#define ADAFRUIT_CC3000_VBAT  5
+#define ADAFRUIT_CC3000_CS    10
+// Use hardware SPI for the remaining pins
+// On an UNO, SCK = 13, MISO = 12, and MOSI = 11
+Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
+SPI_CLOCK_DIVIDER); // you can change this clock speed
+
+#define WLAN_SSID       "Livebox-f1fc"           // cannot be longer than 32 characters!
+#define WLAN_PASS       "aqwzsxedc4321"
+						// Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
+#define WLAN_SECURITY   WLAN_SEC_WPA2
+
+#define IDLE_TIMEOUT_MS  3000    
+
+uint32_t ip;
+/*------F-Wido-----*/
 
 char auth[] = "0ab7fa399d5c4956a4517ea871514f36";
 byte mac[] = { 0xAD, 0x01, 0xAA, 0xBB, 0xCC, 0x03 };
@@ -277,6 +307,45 @@ bool changeChauffage(bool etat) {
 //Start------------------------------
 void setup()
 {
+	/*------D-Wido-----*/
+	Serial.begin(115200);
+	Serial.println(F("Hello, CC3000!\n"));
+
+	Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
+
+	/* Initialise the module */
+	Serial.println(F("\nInitializing..."));
+	if (!cc3000.begin())
+	{
+		Serial.println(F("Couldn't begin()! Check your wiring?"));
+		while (1);
+	}
+
+	// Optional SSID scan
+	// listSSIDResults();
+
+	Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
+	if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
+		Serial.println(F("Failed!"));
+		while (1);
+	}
+
+	Serial.println(F("Connected!"));
+
+	/* Wait for DHCP to complete */
+	Serial.println(F("Request DHCP"));
+	while (!cc3000.checkDHCP())
+	{
+		delay(100); // ToDo: Insert a DHCP timeout!
+	}
+
+
+	/* Display the IP address DNS, Gateway, etc. */
+	/*while (! displayConnectionDetails()) {
+	delay(1000);
+	}*/
+
+	/*------F-Wido-----*/
 	// Debug console
 	Serial.begin(9600);
 
