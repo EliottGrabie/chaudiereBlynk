@@ -39,25 +39,19 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 //#define BLYNK_DEBUG
 #define BLYNK_MAX_SENDBYTES 256
 //#define BLYNK_MAX_READBYTES 1024
-
-#include <SPI.h>
-#include <Ethernet.h>
-#include <BlynkSimpleEthernet.h>
-#include <TimeLib.h>
-#include <WidgetRTC.h>
 /*------D-Wido-----*/
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
-
-
 // These are the interrupt and control pins for СС3000
-#define ADAFRUIT_CC3000_IRQ   3
+#define ADAFRUIT_CC3000_IRQ   7
 #define ADAFRUIT_CC3000_VBAT  5
 #define ADAFRUIT_CC3000_CS    10
 
+#include <SPI.h>
 #include <Adafruit_CC3000.h>
 #include <BlynkSimpleCC3000.h>
-
+#include <TimeLib.h>
+#include <WidgetRTC.h>
 
 
 // Your WiFi credentials.
@@ -68,7 +62,7 @@ int wifi_sec = WLAN_SEC_WPA2;
 
 /*------F-Wido-----*/
 
-char auth[] = "0ab7fa399d5c4956a4517ea871514f36";
+char auth[] = "09ee489ef08649fd9f4c5d01ad92e610";
 
 #define pinRelayChauffeau 9 // Définir la pin utilisée
 bool etatChauffeau = false;
@@ -295,7 +289,7 @@ bool changeChauffage(bool etat) {
 void setup()
 {
 	/*------D-Wido-----*/
-	Serial.begin(115200);
+	Serial.begin(9600);
 	Serial.println(F("Hello, CC3000!\n"));
 
 	//OLD Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
@@ -336,12 +330,11 @@ void setup()
 
 	/*------F-Wido-----*/
 	// Debug console
-	Serial.begin(9600);
 
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
 
-	Blynk.begin(auth, "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
+	Blynk.begin(auth, ssid, pass, wifi_sec, "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
 
 	// Begin synchronizing time
 	rtc.begin();
