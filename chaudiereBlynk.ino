@@ -1,4 +1,4 @@
-/*************************************************************
+﻿/*************************************************************
 Download latest Blynk library here:
 https://github.com/blynkkk/blynk-library/releases/latest
 
@@ -46,44 +46,31 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 #include <TimeLib.h>
 #include <WidgetRTC.h>
 /*------D-Wido-----*/
-#include <Adafruit_CC3000.h>
-#include <ccspi.h>
-#include <SPI.h>
-#include <string.h>
-#include "utility/debug.h"
+/* Comment this out to disable prints and save space */
+#define BLYNK_PRINT Serial
 
-#include <Ethernet.h>
-byte mac[] = { 0x00, 0x19, 0x94, 0x48, 0x06, 0xFF };
-byte ipE[] = { 10, 0, 0, 177 };
-EthernetClient client;
 
-// These are the interrupt and control pins
-#define ADAFRUIT_CC3000_IRQ   7  // MUST be an interrupt pin!
-// These can be any two pins
+// These are the interrupt and control pins for СС3000
+#define ADAFRUIT_CC3000_IRQ   3
 #define ADAFRUIT_CC3000_VBAT  5
 #define ADAFRUIT_CC3000_CS    10
-// Use hardware SPI for the remaining pins
-// On an UNO, SCK = 13, MISO = 12, and MOSI = 11
-Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
-SPI_CLOCK_DIVIDER); // you can change this clock speed
 
-#define WLAN_SSID       "Livebox-f1fc"           // cannot be longer than 32 characters!
-#define WLAN_PASS       "aqwzsxedc4321"
-						// Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
-#define WLAN_SECURITY   WLAN_SEC_WPA2
+#include <Adafruit_CC3000.h>
+#include <BlynkSimpleCC3000.h>
 
-#define IDLE_TIMEOUT_MS  3000    
 
-uint32_t ip;
+
+// Your WiFi credentials.
+// Choose wifi_sec from WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
+char ssid[] = "Livebox-f1fc";
+char pass[] = "aqwzsxedc4321";
+int wifi_sec = WLAN_SEC_WPA2;
+
 /*------F-Wido-----*/
 
 char auth[] = "0ab7fa399d5c4956a4517ea871514f36";
-byte mac[] = { 0xAD, 0x01, 0xAA, 0xBB, 0xCC, 0x03 };
 
-#define W5100_CS  10
-#define SDCARD_CS 4
-
-#define pinRelayChauffeau 9 // D�finir la pin utilis�e
+#define pinRelayChauffeau 9 // Définir la pin utilisée
 bool etatChauffeau = false;
 
 BlynkTimer timer;
@@ -184,7 +171,7 @@ BLYNK_WRITE(V12) {
 		changeChauffage(true);
 	}
 	else if (pinValue == 0 && etatChauffeau == true) {
-		//Serial.println("Ferm�");
+		//Serial.println("Fermé");
 		//fenetreOuverte = false;
 		changeChauffage(false);
 	}
@@ -311,7 +298,7 @@ void setup()
 	Serial.begin(115200);
 	Serial.println(F("Hello, CC3000!\n"));
 
-	Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
+	//OLD Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
 
 	/* Initialise the module */
 	Serial.println(F("\nInitializing..."));
@@ -324,11 +311,13 @@ void setup()
 	// Optional SSID scan
 	// listSSIDResults();
 
+	/*OLD
 	Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
 	if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
 		Serial.println(F("Failed!"));
 		while (1);
 	}
+	*/
 
 	Serial.println(F("Connected!"));
 
@@ -351,9 +340,6 @@ void setup()
 
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
-
-	pinMode(SDCARD_CS, OUTPUT);
-	digitalWrite(SDCARD_CS, HIGH); // Deselect the SD card
 
 	Blynk.begin(auth, "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
 
