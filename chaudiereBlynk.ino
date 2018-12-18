@@ -45,37 +45,7 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 #include <BlynkSimpleEthernet.h>
 #include <TimeLib.h>
 #include <WidgetRTC.h>
-/*------D-Wido-----*/
-#include <Adafruit_CC3000.h>
-#include <ccspi.h>
-#include <SPI.h>
-#include <string.h>
-#include "utility/debug.h"
 
-#include <Ethernet.h>
-byte mac[] = { 0x00, 0x19, 0x94, 0x48, 0x06, 0xFF };
-byte ipE[] = { 10, 0, 0, 177 };
-EthernetClient client;
-
-// These are the interrupt and control pins
-#define ADAFRUIT_CC3000_IRQ   7  // MUST be an interrupt pin!
-// These can be any two pins
-#define ADAFRUIT_CC3000_VBAT  5
-#define ADAFRUIT_CC3000_CS    10
-// Use hardware SPI for the remaining pins
-// On an UNO, SCK = 13, MISO = 12, and MOSI = 11
-Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
-SPI_CLOCK_DIVIDER); // you can change this clock speed
-
-#define WLAN_SSID       "Livebox-f1fc"           // cannot be longer than 32 characters!
-#define WLAN_PASS       "aqwzsxedc4321"
-						// Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
-#define WLAN_SECURITY   WLAN_SEC_WPA2
-
-#define IDLE_TIMEOUT_MS  3000    
-
-uint32_t ip;
-/*------F-Wido-----*/
 
 char auth[] = "0ab7fa399d5c4956a4517ea871514f36";
 byte mac[] = { 0xAD, 0x01, 0xAA, 0xBB, 0xCC, 0x03 };
@@ -93,12 +63,12 @@ int jour = 1;
 bool semaine[7][12] = {
 	//	0	1		2		3		4	5		6		7		8	9		10		11		
 	{ true, false ,false, false, false ,false, false, false ,false, false, false ,false },	//Lundi
-	{ false, true ,false, false, false ,false, false, false ,false, false, false ,true },	//Mardi
-	{ false, false, true, false, false, false, false, false, false, false, true, false },	//Mercredi
-	{ false, false, false, true, false, false, false, false, false, true, false, false },	//Jeudi
-	{ false, false, false, false, true, false, false, false, true, false, false, false },	//Vendredi
-	{ false, false, false, false, false, true, false, true, false, false, false, false },	//Samedi
-	{ false, false, false, false, false, false, true, false, false, false, false, false },	//Dimanche
+{ false, true ,false, false, false ,false, false, false ,false, false, false ,true },	//Mardi
+{ false, false, true, false, false, false, false, false, false, false, true, false },	//Mercredi
+{ false, false, false, true, false, false, false, false, false, true, false, false },	//Jeudi
+{ false, false, false, false, true, false, false, false, true, false, false, false },	//Vendredi
+{ false, false, false, false, false, true, false, true, false, false, false, false },	//Samedi
+{ false, false, false, false, false, false, true, false, false, false, false, false },	//Dimanche
 };
 
 WidgetTable table;
@@ -117,7 +87,7 @@ BLYNK_WRITE(V0)
 	//semaine[][] = param.asInt();
 	Serial.print("syncVirtual : ");
 	Serial.println(param.asString());
-	
+
 	String retSemaine = param.asString();
 	int iCar = 0;
 	for (int col = 0; col < 12; col++) {
@@ -126,12 +96,12 @@ BLYNK_WRITE(V0)
 		//Serial.println(col);
 
 		char str[5] = "0x";
-		
-		str[2] = retSemaine[iCar+col];
+
+		str[2] = retSemaine[iCar + col];
 		iCar++;
-		str[3] = retSemaine[iCar+col];
+		str[3] = retSemaine[iCar + col];
 		//iCar++;
-				
+
 		int num;
 		//Serial.print("str : ");
 		//Serial.println(str);
@@ -141,7 +111,7 @@ BLYNK_WRITE(V0)
 		//Serial.print("num : ");
 		//Serial.println(num);
 		unsigned int iToByte = byte(num);
-		
+
 		//iToByte -= 65;
 		//Serial.print("iToByte : ");
 		//Serial.println(iToByte);
@@ -149,7 +119,7 @@ BLYNK_WRITE(V0)
 		byte creneau = byte(iToByte);
 		//Serial.print("creneau : ");
 		//Serial.println(creneau,BIN);
-		
+
 		//Serial.println("creneau: ");
 		for (int _jour = 0; _jour < 7; _jour++) {
 			if (creneau & (1 << (6 - _jour)))
@@ -163,9 +133,9 @@ BLYNK_WRITE(V0)
 				semaine[_jour][col] = false;
 			}
 		}
-		
+
 		Serial.println("");
-		
+
 		//delay(500);
 	}
 }
@@ -260,7 +230,7 @@ void checkClock()
 	Blynk.virtualWrite(V1, jSemaine);
 	Serial.println(dayOfWeek(now()) - 2);
 	Serial.println(int(hour() / 2));
-	if (semaine[dayOfWeek(now()) - 2][int(hour()/2)])
+	if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
 	{
 		changeChauffage(true);
 	}
@@ -307,45 +277,6 @@ bool changeChauffage(bool etat) {
 //Start------------------------------
 void setup()
 {
-	/*------D-Wido-----*/
-	Serial.begin(115200);
-	Serial.println(F("Hello, CC3000!\n"));
-
-	Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
-
-	/* Initialise the module */
-	Serial.println(F("\nInitializing..."));
-	if (!cc3000.begin())
-	{
-		Serial.println(F("Couldn't begin()! Check your wiring?"));
-		while (1);
-	}
-
-	// Optional SSID scan
-	// listSSIDResults();
-
-	Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
-	if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
-		Serial.println(F("Failed!"));
-		while (1);
-	}
-
-	Serial.println(F("Connected!"));
-
-	/* Wait for DHCP to complete */
-	Serial.println(F("Request DHCP"));
-	while (!cc3000.checkDHCP())
-	{
-		delay(100); // ToDo: Insert a DHCP timeout!
-	}
-
-
-	/* Display the IP address DNS, Gateway, etc. */
-	/*while (! displayConnectionDetails()) {
-	delay(1000);
-	}*/
-
-	/*------F-Wido-----*/
 	// Debug console
 	Serial.begin(9600);
 
@@ -372,16 +303,16 @@ void setup()
 
 		String msg = "";
 
-		int _jour = jour-1;
+		int _jour = jour - 1;
 		if (selected) {
 			semaine[_jour][index] = true;
 			table.updateRow(index, makeHeure(index), "ON");
 		}
-		else{
+		else {
 			semaine[_jour][index] = false;
 			Blynk.virtualWrite(V11, "update", index, makeHeure(index), "OFF");
 		}
-		
+
 		// send to serveur pour save
 		for (int col = 0; col < 12; col++) {
 			byte bToInt = 0;
@@ -389,7 +320,7 @@ void setup()
 			for (int _jour2 = 0; _jour2 < 7; _jour2++) {
 				//Serial.print(semaine[_jour2][col]);
 				if (semaine[_jour2][col]) {
-					bToInt |= 1 << (6-_jour2);
+					bToInt |= 1 << (6 - _jour2);
 				}
 			}
 			//Serial.println("");
@@ -397,12 +328,12 @@ void setup()
 			//Serial.println(bToInt, BIN);
 			char car = char(bToInt);
 			char hexa[3];
-			
+
 			sprintf(hexa, "%.2X", car);
 			//Serial.println(hexa,BIN);
 			msg += hexa;
 
-			
+
 
 			//delay(500);
 		}
