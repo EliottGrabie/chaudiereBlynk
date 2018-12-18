@@ -41,7 +41,7 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 //#define BLYNK_MAX_READBYTES 1024
 /*------D-Wido-----*/
 /* Comment this out to disable prints and save space */
-#define BLYNK_PRINT Serial
+//#define BLYNK_PRINT Serial
 // These are the interrupt and control pins for СС3000
 #define ADAFRUIT_CC3000_IRQ   7
 #define ADAFRUIT_CC3000_VBAT  5
@@ -51,7 +51,7 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 #include <Adafruit_CC3000.h>
 #include <BlynkSimpleCC3000.h>
 #include <TimeLib.h>
-#include <WidgetRTC.h>
+
 
 
 // Your WiFi credentials.
@@ -68,7 +68,6 @@ char auth[] = "09ee489ef08649fd9f4c5d01ad92e610";
 bool etatChauffeau = false;
 
 BlynkTimer timer;
-WidgetRTC rtc;
 
 int jour = 1;
 bool semaine[7][12] = {
@@ -85,19 +84,17 @@ bool semaine[7][12] = {
 WidgetTable table;
 BLYNK_ATTACH_WIDGET(table, V11);
 
-//Fonction--------------------------
-
 BLYNK_CONNECTED() {
 	//get data stored in virtual pin V0 from server
 	Blynk.syncVirtual(V0);
 }
-
+/*
 BLYNK_WRITE(V0)
 {
 	//restoring value
 	//semaine[][] = param.asInt();
-	Serial.print("syncVirtual : ");
-	Serial.println(param.asString());
+	//Serial.print("syncVirtual : ");
+	//Serial.println(param.asString());
 	
 	String retSemaine = param.asString();
 	int iCar = 0;
@@ -145,17 +142,17 @@ BLYNK_WRITE(V0)
 			}
 		}
 		
-		Serial.println("");
+		//Serial.println("");
 		
 		//delay(500);
 	}
 }
-
+*/
 BLYNK_WRITE(V10) {
 	actuTableau(param.asInt());
 	jour = param.asInt();
 }
-//Btn On Off
+
 BLYNK_WRITE(V12) {
 	int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
 
@@ -174,12 +171,10 @@ BLYNK_WRITE(V12) {
 
 String makeHeure(int index) {
 
-	int startHeure = index * 2;
-	int stopHeure = (index * 2) + 2;
 	String heure = "";
-	heure = heure + startHeure;
+	heure = heure + (index * 2);
 	heure = heure + ":00 - ";
-	heure = heure + stopHeure;
+	heure = heure + ((index * 2) + 2);
 	heure = heure + ":00";
 	return heure;
 }
@@ -203,7 +198,6 @@ void actuTableau(int _jour) {
 
 }
 
-// Digital clock display of the time
 void checkClock()
 {
 
@@ -239,8 +233,8 @@ void checkClock()
 	}
 
 	Blynk.virtualWrite(V1, jSemaine);
-	Serial.println(dayOfWeek(now()) - 2);
-	Serial.println(int(hour() / 2));
+	//Serial.println(dayOfWeek(now()) - 2);
+	//Serial.println(int(hour() / 2));
 	if (semaine[dayOfWeek(now()) - 2][int(hour()/2)])
 	{
 		changeChauffage(true);
@@ -251,7 +245,7 @@ void checkClock()
 	}
 
 }
-
+/*
 void printTableau() {
 	for (size_t _jour = 0; _jour < 7; _jour++)
 	{
@@ -270,7 +264,7 @@ void printTableau() {
 	}
 	Serial.println("");
 }
-
+*/
 bool changeChauffage(bool etat) {
 	if (etat)
 	{
@@ -285,60 +279,28 @@ bool changeChauffage(bool etat) {
 		Blynk.virtualWrite(V12, etatChauffeau);
 	}
 }
-//Start------------------------------
+
 void setup()
 {
-	/*------D-Wido-----*/
 	Serial.begin(9600);
-	Serial.println(F("Hello, CC3000!\n"));
 
-	//OLD Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
-
-	/* Initialise the module */
-	Serial.println(F("\nInitializing..."));
 	if (!cc3000.begin())
 	{
-		Serial.println(F("Couldn't begin()! Check your wiring?"));
+		//Serial.println(F("Couldn't begin()! Check your wiring?"));
 		while (1);
 	}
-
-	// Optional SSID scan
-	// listSSIDResults();
-
-	/*OLD
-	Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
-	if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
-		Serial.println(F("Failed!"));
-		while (1);
-	}
-	*/
-
-	Serial.println(F("Connected!"));
-
-	/* Wait for DHCP to complete */
-	Serial.println(F("Request DHCP"));
 	while (!cc3000.checkDHCP())
 	{
 		delay(100); // ToDo: Insert a DHCP timeout!
 	}
 
 
-	/* Display the IP address DNS, Gateway, etc. */
-	/*while (! displayConnectionDetails()) {
-	delay(1000);
-	}*/
-
-	/*------F-Wido-----*/
-	// Debug console
-
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
 
 	Blynk.begin(auth, ssid, pass, wifi_sec, "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
 
-	// Begin synchronizing time
-	rtc.begin();
-
+	/*
 	table.onOrderChange([](int indexFrom, int indexTo) {
 		//Serial.print("Reordering: ");
 		//Serial.print(indexFrom);
@@ -346,7 +308,7 @@ void setup()
 		//Serial.print(indexTo);
 		//Serial.println();
 	});
-
+	*/
 	table.onSelectChange([](int index, bool selected) {
 
 		String msg = "";
@@ -381,14 +343,10 @@ void setup()
 			//Serial.println(hexa,BIN);
 			msg += hexa;
 
-			
-
-			//delay(500);
 		}
-		Serial.print("msg : ");
-		Serial.println(msg);
-		/*Serial.print("  Size : ");
-		Serial.println(sizeof(msg));*/
+		//Serial.print("msg : ");
+		//Serial.println(msg);
+
 		Blynk.virtualWrite(V0, msg);
 
 	});
