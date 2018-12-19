@@ -74,11 +74,14 @@ bool semaine[7][12] = {
 WidgetTable table;
 BLYNK_ATTACH_WIDGET(table, V11);
 
+float TempNode1 = 0;
+
 //Fonction--------------------------
 
 BLYNK_CONNECTED() {
 	//get data stored in virtual pin V0 from server
 	Blynk.syncVirtual(V0);
+	Blynk.syncVirtual(V5);
 }
 
 BLYNK_WRITE(V0)
@@ -158,6 +161,11 @@ BLYNK_WRITE(V12) {
 		//fenetreOuverte = false;
 		changeChauffage(false);
 	}
+}
+
+//Brdge 
+BLYNK_WRITE(V5) {
+	TempNode1 = param.asInt(); //pinData variable will store value that came via Bridge
 }
 
 
@@ -349,7 +357,7 @@ void setup()
 	actuTableau(jour);
 	//delay(1000);
 	// Display digital clock every 300000 = 5 min
-	timer.setInterval(30000L, checkClock);
+	timer.setInterval(6000L, checkClock);
 }
 
 void loop()
