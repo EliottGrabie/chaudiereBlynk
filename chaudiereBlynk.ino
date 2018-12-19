@@ -40,20 +40,18 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 #define BLYNK_MAX_SENDBYTES 256
 //#define BLYNK_MAX_READBYTES 1024
 
-#include <SPI.h>
-#include <Ethernet.h>
-#include <BlynkSimpleEthernet.h>
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
 #include <TimeLib.h>
 #include <WidgetRTC.h>
 
 
 char auth[] = "0ab7fa399d5c4956a4517ea871514f36";
-byte mac[] = { 0xAD, 0x01, 0xAA, 0xBB, 0xCC, 0x03 };
+char ssid[] = "Livebox-680C";
+char pass[] = "aqwzsxedc1234";
 
-#define W5100_CS  10
-#define SDCARD_CS 4
 
-#define pinRelayChauffeau 9 // Définir la pin utilisée
+#define pinRelayChauffeau 1 // Définir la pin utilisée
 bool etatChauffeau = false;
 
 BlynkTimer timer;
@@ -80,16 +78,17 @@ float TempNode1 = 0;
 
 BLYNK_CONNECTED() {
 	//get data stored in virtual pin V0 from server
-	Blynk.syncVirtual(V0);
-	Blynk.syncVirtual(V5);
+	//Blynk.syncVirtual(V0);
+	//Blynk.syncVirtual(V5);
+	Blynk.syncAll();
 }
 
-BLYNK_WRITE(V0)
+BLYNK_WRITE(V0)	//Get calandar from Serveur
 {
 	//restoring value
 	//semaine[][] = param.asInt();
-	Serial.print("syncVirtual : ");
-	Serial.println(param.asString());
+	//Serial.print("syncVirtual : ");
+	//Serial.println(param.asString());
 
 	String retSemaine = param.asString();
 	int iCar = 0;
@@ -106,18 +105,18 @@ BLYNK_WRITE(V0)
 		//iCar++;
 
 		int num;
-		//Serial.print("str : ");
-		//Serial.println(str);
+		Serial.print("str : ");
+		Serial.println(str);
 
 		sscanf(str, "%x", &num);
 
-		//Serial.print("num : ");
-		//Serial.println(num);
+		Serial.print("num : ");
+		Serial.println(num);
 		unsigned int iToByte = byte(num);
 
 		//iToByte -= 65;
-		//Serial.print("iToByte : ");
-		//Serial.println(iToByte);
+		Serial.print("iToByte : ");
+		Serial.println(iToByte);
 
 		byte creneau = byte(iToByte);
 		//Serial.print("creneau : ");
@@ -150,7 +149,7 @@ BLYNK_WRITE(V10) {
 //Btn On Off
 BLYNK_WRITE(V12) {
 	int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
-
+	Serial.println(pinValue);
 	if (pinValue == 1 && etatChauffeau == false) {
 		//Serial.println("Ouvert");
 		//fenetreOuverte = true;
@@ -235,7 +234,7 @@ void checkClock()
 		break;
 	}
 
-	Blynk.virtualWrite(V1, jSemaine);
+	Blynk.virtualWrite(V2, jSemaine);
 	Serial.println(dayOfWeek(now()) - 2);
 	Serial.println(int(hour() / 2));
 	if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
@@ -248,7 +247,7 @@ void checkClock()
 	}
 
 }
-
+/*
 void printTableau() {
 	for (size_t _jour = 0; _jour < 7; _jour++)
 	{
@@ -267,7 +266,7 @@ void printTableau() {
 	}
 	Serial.println("");
 }
-
+*/
 bool changeChauffage(bool etat) {
 	if (etat)
 	{
@@ -286,16 +285,16 @@ bool changeChauffage(bool etat) {
 void setup()
 {
 	// Debug console
-	Serial.begin(9600);
+	Serial.begin(115200);
+	Serial.println("Start");
 
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
 
-	pinMode(SDCARD_CS, OUTPUT);
-	digitalWrite(SDCARD_CS, HIGH); // Deselect the SD card
-
-	Blynk.begin(auth, "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
-
+	Serial.println("Blynk.begin");
+	//Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
+	Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8080);
+	
 	// Begin synchronizing time
 	rtc.begin();
 
@@ -322,7 +321,7 @@ void setup()
 		}
 
 		// send to serveur pour save
-		for (int col = 0; col < 12; col++) {
+		for (int col = 0; col < 12; col++) {		//castcalandar to ???
 			byte bToInt = 0;
 			//Serial.print("creneau : ");
 			for (int _jour2 = 0; _jour2 < 7; _jour2++) {
@@ -349,7 +348,7 @@ void setup()
 		Serial.println(msg);
 		/*Serial.print("  Size : ");
 		Serial.println(sizeof(msg));*/
-		Blynk.virtualWrite(V0, msg);
+		Blynk.virtualWrite(V0, msg);		//Put calandar to serveur
 
 	});
 
@@ -357,6 +356,7 @@ void setup()
 	actuTableau(jour);
 	//delay(1000);
 	// Display digital clock every 300000 = 5 min
+	Serial.println("finsetup");
 	timer.setInterval(6000L, checkClock);
 }
 
