@@ -51,7 +51,7 @@ char ssid[] = "Livebox-680C";
 char pass[] = "aqwzsxedc1234";
 
 
-#define pinRelayChauffeau 1 // Définir la pin utilisée
+#define pinRelayChauffeau D1 // Définir la pin utilisée
 bool etatChauffeau = false;
 
 BlynkTimer timer;
@@ -68,6 +68,13 @@ bool semaine[7][12] = {
 { false, false, false, false, false, true, false, true, false, false, false, false },	//Samedi
 { false, false, false, false, false, false, true, false, false, false, false, false },	//Dimanche
 };
+/*
+union uJour
+{
+	char a;
+	byte b[8];
+};
+*/
 
 WidgetTable table;
 BLYNK_ATTACH_WIDGET(table, V11);
@@ -91,55 +98,8 @@ BLYNK_WRITE(V0)	//Get calandar from Serveur
 	//Serial.println(param.asString());
 
 	String retSemaine = param.asString();
-	int iCar = 0;
-	for (int col = 0; col < 12; col++) {
-
-		//Serial.print("col : ");
-		//Serial.println(col);
-
-		char str[5] = "0x";
-
-		str[2] = retSemaine[iCar + col];
-		iCar++;
-		str[3] = retSemaine[iCar + col];
-		//iCar++;
-
-		int num;
-		Serial.print("str : ");
-		Serial.println(str);
-
-		sscanf(str, "%x", &num);
-
-		Serial.print("num : ");
-		Serial.println(num);
-		unsigned int iToByte = byte(num);
-
-		//iToByte -= 65;
-		Serial.print("iToByte : ");
-		Serial.println(iToByte);
-
-		byte creneau = byte(iToByte);
-		//Serial.print("creneau : ");
-		//Serial.println(creneau,BIN);
-
-		//Serial.println("creneau: ");
-		for (int _jour = 0; _jour < 7; _jour++) {
-			if (creneau & (1 << (6 - _jour)))
-			{
-				//Serial.print("1");
-				semaine[_jour][col] = true;
-			}
-			else
-			{
-				//Serial.print("0");
-				semaine[_jour][col] = false;
-			}
-		}
-
-		Serial.println("");
-
-		//delay(500);
-	}
+	deCompresseCalendar(retSemaine);
+	
 }
 
 BLYNK_WRITE(V10) {
@@ -199,6 +159,112 @@ void actuTableau(int _jour) {
 
 }
 
+String compresseCalendar() {
+	String msg = "";
+	//uJour lettre[12];
+
+
+	for (int col = 0; col < 12; col++) {
+		char lettre;
+		for (int _jour = 0; _jour < 7; _jour++) {
+			BlynkBitWrite(lettre, _jour, semaine[_jour][col]);
+		}
+		
+		msg += lettre;
+	}
+	/*		OLD
+	
+	for (int col = 0; col < 12; col++) {		//cast calandar to string
+		byte bToInt = 0;
+		//Serial.print("creneau : ");
+		for (int _jour2 = 0; _jour2 < 7; _jour2++) {
+			//Serial.print(semaine[_jour2][col]);
+			if (semaine[_jour2][col]) {
+				bToInt |= 1 << (6 - _jour2);
+			}
+		}
+		//Serial.println("");
+		//Serial.print("bToInt : ");
+		//Serial.println(bToInt, BIN);
+		char car = char(bToInt);
+		char hexa[3];
+
+		sprintf(hexa, "%.2X", car);
+		//Serial.println(hexa,BIN);
+		msg += hexa;
+
+
+
+		//delay(500);
+	}*/
+	return msg;
+}
+
+void deCompresseCalendar(String msg) {
+
+	for (int col = 0; col < 12; col++) {
+		char lettre;
+		for (int _jour = 0; _jour < 7; _jour++) {
+			if (BlynkBitRead(msg[col], _jour)) {
+				semaine[_jour][col] = true;
+			}
+			else {
+				semaine[_jour][col] = false;
+			}
+		}
+	}
+	//printTableau();
+	/*		OLD
+	int iCar = 0;
+	for (int col = 0; col < 12; col++) {
+
+		//Serial.print("col : ");
+		//Serial.println(col);
+
+		char str[5] = "0x";
+
+		str[2] = msg[iCar + col];
+		iCar++;
+		str[3] = msg[iCar + col];
+		//iCar++;
+
+		int num;
+		Serial.print("str : ");
+		Serial.println(str);
+
+		sscanf(str, "%x", &num);
+
+		Serial.print("num : ");
+		Serial.println(num);
+		unsigned int iToByte = byte(num);
+
+		//iToByte -= 65;
+		Serial.print("iToByte : ");
+		Serial.println(iToByte);
+
+		byte creneau = byte(iToByte);
+		//Serial.print("creneau : ");
+		//Serial.println(creneau,BIN);
+
+		//Serial.println("creneau: ");
+		for (int _jour = 0; _jour < 7; _jour++) {
+			if (creneau & (1 << (6 - _jour)))
+			{
+				//Serial.print("1");
+				semaine[_jour][col] = true;
+			}
+			else
+			{
+				//Serial.print("0");
+				semaine[_jour][col] = false;
+			}
+		}
+
+
+		//delay(500);
+	}*/
+}
+
 // Digital clock display of the time
 void checkClock()
 {
@@ -235,8 +301,6 @@ void checkClock()
 	}
 
 	Blynk.virtualWrite(V2, jSemaine);
-	Serial.println(dayOfWeek(now()) - 2);
-	Serial.println(int(hour() / 2));
 	if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
 	{
 		changeChauffage(true);
@@ -247,7 +311,7 @@ void checkClock()
 	}
 
 }
-/*
+
 void printTableau() {
 	for (size_t _jour = 0; _jour < 7; _jour++)
 	{
@@ -266,7 +330,7 @@ void printTableau() {
 	}
 	Serial.println("");
 }
-*/
+
 bool changeChauffage(bool etat) {
 	if (etat)
 	{
@@ -286,12 +350,13 @@ void setup()
 {
 	// Debug console
 	Serial.begin(115200);
-	Serial.println("Start");
+	Serial.println("STAAAAART");
+
 
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
 
-	Serial.println("Blynk.begin");
+
 	//Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
 	Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8080);
 	
@@ -321,29 +386,8 @@ void setup()
 		}
 
 		// send to serveur pour save
-		for (int col = 0; col < 12; col++) {		//castcalandar to ???
-			byte bToInt = 0;
-			//Serial.print("creneau : ");
-			for (int _jour2 = 0; _jour2 < 7; _jour2++) {
-				//Serial.print(semaine[_jour2][col]);
-				if (semaine[_jour2][col]) {
-					bToInt |= 1 << (6 - _jour2);
-				}
-			}
-			//Serial.println("");
-			//Serial.print("bToInt : ");
-			//Serial.println(bToInt, BIN);
-			char car = char(bToInt);
-			char hexa[3];
-
-			sprintf(hexa, "%.2X", car);
-			//Serial.println(hexa,BIN);
-			msg += hexa;
-
-
-
-			//delay(500);
-		}
+		msg = compresseCalendar();
+		
 		Serial.print("msg : ");
 		Serial.println(msg);
 		/*Serial.print("  Size : ");
@@ -356,7 +400,6 @@ void setup()
 	actuTableau(jour);
 	//delay(1000);
 	// Display digital clock every 300000 = 5 min
-	Serial.println("finsetup");
 	timer.setInterval(6000L, checkClock);
 }
 
