@@ -79,7 +79,16 @@ union uJour
 WidgetTable table;
 BLYNK_ATTACH_WIDGET(table, V11);
 
+float TempNodeSalon = 0;
 float TempNode1 = 0;
+float TempNode2 = 0;
+float TempNode3 = 0;
+
+float tempMax = 0;
+
+int mode = 0;
+
+int dManuel = 0;
 
 //Fonction--------------------------
 
@@ -109,13 +118,13 @@ BLYNK_WRITE(V10) {
 //Btn On Off
 BLYNK_WRITE(V12) {
 	int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
-	Serial.println(pinValue);
-	if (pinValue == 1 && etatChauffeau == false) {
+	//Serial.println(pinValue);
+	if (pinValue == 1) {
 		//Serial.println("Ouvert");
 		//fenetreOuverte = true;
 		changeChauffage(true);
 	}
-	else if (pinValue == 0 && etatChauffeau == true) {
+	else if (pinValue == 0) {
 		//Serial.println("Fermé");
 		//fenetreOuverte = false;
 		changeChauffage(false);
@@ -123,8 +132,28 @@ BLYNK_WRITE(V12) {
 }
 
 //Brdge 
-BLYNK_WRITE(V5) {
-	TempNode1 = param.asInt(); //pinData variable will store value that came via Bridge
+BLYNK_WRITE(V5) {		//TempNodeSalon
+	TempNodeSalon = param.asFloat(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V6) {		//TempNodeSalon
+	TempNode1 = param.asFloat(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V7) {		//TempNodeSalon
+	TempNode2 = param.asFloat(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V8) {		//TempNodeSalon
+	TempNode3 = param.asFloat(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V15) {		//TempMAx
+	tempMax = param.asFloat(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V16) {		//mode
+	mode = param.asInt(); //pinData variable will store value that came via Bridge
 }
 
 
@@ -301,14 +330,39 @@ void checkClock()
 	}
 
 	Blynk.virtualWrite(V2, jSemaine);
-	if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
+	switch (mode)
 	{
-		changeChauffage(true);
+	case 1:			//Mode On
+		//Mode interupteur
+		if (hour() == 0) {
+			Blynk.virtualWrite(V16, 2);		//retour calendar
+			//ou juste Off ???
+		}
+		//changeChauffage(true);
+		break;
+	case 2:		//Mode Calendar
+		if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
+		{
+			changeChauffage(true);
+		}
+		else
+		{
+			changeChauffage(false);
+		}
+		break;
+	case 3:		//Mode Off 
+		changeChauffage(false);
+		break;
+				
+	default:
+		break;
 	}
-	else
-	{
+
+	//CheckTemp
+	if (TempNodeSalon > tempMax) {
 		changeChauffage(false);
 	}
+
 
 }
 
@@ -332,19 +386,25 @@ void printTableau() {
 }
 
 bool changeChauffage(bool etat) {
-	if (etat)
-	{
-		digitalWrite(pinRelayChauffeau, HIGH);
-		etatChauffeau = true;
-		Blynk.virtualWrite(V12, etatChauffeau);
+
+	if (etatChauffeau != etat) {
+		if (etat && (TempNodeSalon <= tempMax))
+		{
+			digitalWrite(pinRelayChauffeau, HIGH);
+			etatChauffeau = true;
+			Blynk.virtualWrite(V12, etatChauffeau);
+		}
+		else
+		{
+			digitalWrite(pinRelayChauffeau, LOW);
+			etatChauffeau = false;
+			Blynk.virtualWrite(V12, etatChauffeau);
+		}
 	}
-	else
-	{
-		digitalWrite(pinRelayChauffeau, LOW);
-		etatChauffeau = false;
-		Blynk.virtualWrite(V12, etatChauffeau);
-	}
+
+	
 }
+
 //Start------------------------------
 void setup()
 {
