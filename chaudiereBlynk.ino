@@ -338,6 +338,9 @@ void checkClock()
 			Blynk.virtualWrite(V16, 2);		//retour calendar
 			//ou juste Off ???
 		}
+		if (TempNodeSalon < tempMax) {
+			changeChauffage(true);
+		}
 		//changeChauffage(true);
 		break;
 	case 2:		//Mode Calendar
@@ -362,8 +365,6 @@ void checkClock()
 	if (TempNodeSalon > tempMax) {
 		changeChauffage(false);
 	}
-
-
 }
 
 void printTableau() {
