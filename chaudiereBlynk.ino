@@ -37,6 +37,7 @@ https://github.com/PaulStoffregen/Time/blob/master/examples/TimeSerial/TimeSeria
 /* Comment this out to disable prints and save space */
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
+//#include <Blynk.h>
 #define BLYNK_MAX_SENDBYTES 256
 //#define BLYNK_MAX_READBYTES 1024
 
@@ -84,6 +85,7 @@ float TempNode1 = 0;
 float TempNode2 = 0;
 float TempNode3 = 0;
 
+float tempMin = 0;
 float tempMax = 0;
 
 int mode = 0;
@@ -148,12 +150,19 @@ BLYNK_WRITE(V8) {		//TempNodeSalon
 	TempNode3 = param.asFloat(); //pinData variable will store value that came via Bridge
 }
 
+BLYNK_WRITE(V14) {		//TempMAx
+	tempMin = param.asFloat(); //pinData variable will store value that came via Bridge
+}
 BLYNK_WRITE(V15) {		//TempMAx
 	tempMax = param.asFloat(); //pinData variable will store value that came via Bridge
 }
 
 BLYNK_WRITE(V16) {		//mode
 	mode = param.asInt(); //pinData variable will store value that came via Bridge
+}
+
+BLYNK_WRITE(V20) {		//Creneau 1
+	cre1 = param.asInt(); //pinData variable will store value that came via Bridge
 }
 
 
@@ -168,7 +177,7 @@ String makeHeure(int index) {
 	heure = heure + ":00";
 	return heure;
 }
-
+/*
 void actuTableau(int _jour) {
 	table.clear(); //Cleart Tableau
 	_jour--;
@@ -187,6 +196,7 @@ void actuTableau(int _jour) {
 	}
 
 }
+*/
 
 String compresseCalendar() {
 	String msg = "";
@@ -329,7 +339,7 @@ void checkClock()
 		break;
 	}
 
-	Blynk.virtualWrite(V2, jSemaine);
+	//Blynk.virtualWrite(V2, jSemaine);
 	switch (mode)
 	{
 	case 1:			//Mode On
