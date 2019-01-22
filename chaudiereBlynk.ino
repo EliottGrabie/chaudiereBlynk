@@ -59,16 +59,6 @@ BlynkTimer timer;
 WidgetRTC rtc;
 
 int jour = 1;
-bool semaine[7][12] = {
-	//	0	1		2		3		4	5		6		7		8	9		10		11		
-	{ true, false ,false, false, false ,false, false, false ,false, false, false ,false },	//Lundi
-{ false, true ,false, false, false ,false, false, false ,false, false, false ,true },	//Mardi
-{ false, false, true, false, false, false, false, false, false, false, true, false },	//Mercredi
-{ false, false, false, true, false, false, false, false, false, true, false, false },	//Jeudi
-{ false, false, false, false, true, false, false, false, true, false, false, false },	//Vendredi
-{ false, false, false, false, false, true, false, true, false, false, false, false },	//Samedi
-{ false, false, false, false, false, false, true, false, false, false, false, false },	//Dimanche
-};
 /*
 union uJour
 {
@@ -77,8 +67,6 @@ union uJour
 };
 */
 
-WidgetTable table;
-BLYNK_ATTACH_WIDGET(table, V11);
 
 float TempNodeSalon = 0;
 float TempNode1 = 0;
@@ -92,6 +80,8 @@ int mode = 0;
 
 int dManuel = 0;
 
+TimeInputParam* lCreneau[6];
+
 //Fonction--------------------------
 
 BLYNK_CONNECTED() {
@@ -101,22 +91,6 @@ BLYNK_CONNECTED() {
 	Blynk.syncAll();
 }
 
-BLYNK_WRITE(V0)	//Get calandar from Serveur
-{
-	//restoring value
-	//semaine[][] = param.asInt();
-	//Serial.print("syncVirtual : ");
-	//Serial.println(param.asString());
-
-	String retSemaine = param.asString();
-	deCompresseCalendar(retSemaine);
-	
-}
-
-BLYNK_WRITE(V10) {
-	actuTableau(param.asInt());
-	jour = param.asInt();
-}
 //Btn On Off
 BLYNK_WRITE(V12) {
 	int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
@@ -162,7 +136,34 @@ BLYNK_WRITE(V16) {		//mode
 }
 
 BLYNK_WRITE(V20) {		//Creneau 1
-	cre1 = param.asInt(); //pinData variable will store value that came via Bridge
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[0] = pt; //pinData variable will store value that came via Bridge
+}
+BLYNK_WRITE(V21) {		//Creneau 1
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[1] = pt; //pinData variable will store value that came via Bridge
+}
+BLYNK_WRITE(V22) {		//Creneau 1
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[2] = pt; //pinData variable will store value that came via Bridge
+}
+BLYNK_WRITE(V23) {		//Creneau 1
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[3] = pt; //pinData variable will store value that came via Bridge
+}
+BLYNK_WRITE(V24) {		//Creneau 1
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[4] = pt; //pinData variable will store value that came via Bridge
+}
+BLYNK_WRITE(V25) {		//Creneau 1
+	TimeInputParam* pt = new TimeInputParam(param);
+	//TimeInputParam t(param);
+	lCreneau[5] = pt; //pinData variable will store value that came via Bridge
 }
 
 
@@ -177,168 +178,37 @@ String makeHeure(int index) {
 	heure = heure + ":00";
 	return heure;
 }
-/*
-void actuTableau(int _jour) {
-	table.clear(); //Cleart Tableau
-	_jour--;
-	for (size_t i = 0; i < sizeof(semaine[_jour]); i++)	//Parcourt des tranche d'heure
-	{
-		String etat = "OFF";
 
-		if (semaine[_jour][i]) {
-			etat = "ON";
-		}
-		table.addRow(i, makeHeure(i), etat);
-		//table.pickRow(i);
-		if (semaine[_jour][i] == false) {
-			Blynk.virtualWrite(V11, "deselect", i);
-		}
-	}
-
-}
-*/
-
-String compresseCalendar() {
-	String msg = "";
-	//uJour lettre[12];
-
-
-	for (int col = 0; col < 12; col++) {
-		char lettre;
-		for (int _jour = 0; _jour < 7; _jour++) {
-			BlynkBitWrite(lettre, _jour, semaine[_jour][col]);
-		}
-		
-		msg += lettre;
-	}
-	/*		OLD
+bool checkCreneau() {
 	
-	for (int col = 0; col < 12; col++) {		//cast calandar to string
-		byte bToInt = 0;
-		//Serial.print("creneau : ");
-		for (int _jour2 = 0; _jour2 < 7; _jour2++) {
-			//Serial.print(semaine[_jour2][col]);
-			if (semaine[_jour2][col]) {
-				bToInt |= 1 << (6 - _jour2);
-			}
-		}
-		//Serial.println("");
-		//Serial.print("bToInt : ");
-		//Serial.println(bToInt, BIN);
-		char car = char(bToInt);
-		char hexa[3];
-
-		sprintf(hexa, "%.2X", car);
-		//Serial.println(hexa,BIN);
-		msg += hexa;
-
-
-
-		//delay(500);
-	}*/
-	return msg;
-}
-
-void deCompresseCalendar(String msg) {
-
-	for (int col = 0; col < 12; col++) {
-		char lettre;
-		for (int _jour = 0; _jour < 7; _jour++) {
-			if (BlynkBitRead(msg[col], _jour)) {
-				semaine[_jour][col] = true;
-			}
-			else {
-				semaine[_jour][col] = false;
+	bool etat = false;
+	int arraySize = sizeof(lCreneau) / sizeof(lCreneau[0]);
+	for (size_t i = 0; i < arraySize; i++)
+	{
+		if (lCreneau[i]->isWeekdaySelected(dayOfWeek(now()))) {
+			if (lCreneau[i]->getStartHour() <= hour() && lCreneau[i]->getStopHour() >= hour()) {
+				if (lCreneau[i]->getStartHour() == hour())
+				{
+					if(lCreneau[i]->getStartMinute() <= minute()){ etat = true; }
+				}
+				else if (lCreneau[i]->getStopHour() == hour())
+				{
+					if(lCreneau[i]->getStopMinute() > minute()){ etat = true; }
+				}
+				else
+				{
+					etat = true;
+				}
 			}
 		}
 	}
-	//printTableau();
-	/*		OLD
-	int iCar = 0;
-	for (int col = 0; col < 12; col++) {
-
-		//Serial.print("col : ");
-		//Serial.println(col);
-
-		char str[5] = "0x";
-
-		str[2] = msg[iCar + col];
-		iCar++;
-		str[3] = msg[iCar + col];
-		//iCar++;
-
-		int num;
-		Serial.print("str : ");
-		Serial.println(str);
-
-		sscanf(str, "%x", &num);
-
-		Serial.print("num : ");
-		Serial.println(num);
-		unsigned int iToByte = byte(num);
-
-		//iToByte -= 65;
-		Serial.print("iToByte : ");
-		Serial.println(iToByte);
-
-		byte creneau = byte(iToByte);
-		//Serial.print("creneau : ");
-		//Serial.println(creneau,BIN);
-
-		//Serial.println("creneau: ");
-		for (int _jour = 0; _jour < 7; _jour++) {
-			if (creneau & (1 << (6 - _jour)))
-			{
-				//Serial.print("1");
-				semaine[_jour][col] = true;
-			}
-			else
-			{
-				//Serial.print("0");
-				semaine[_jour][col] = false;
-			}
-		}
-
-
-		//delay(500);
-	}*/
+	return etat;
+	
 }
 
 // Digital clock display of the time
 void checkClock()
 {
-
-	String currentTime = String(hour()) + ":" + minute() + ":" + second();
-	String currentDate = String(day()) + " " + month() + " " + year();
-
-	String jSemaine;
-	switch (dayOfWeek(now()))
-	{
-	case 1:
-		jSemaine = "Dimmanche";
-		break;
-	case 2:
-		jSemaine = "Lundi";
-		break;
-	case 3:
-		jSemaine = "Mardi";
-		break;
-	case 4:
-		jSemaine = "Mercredi";
-		break;
-	case 5:
-		jSemaine = "Jeudi";
-		break;
-	case 6:
-		jSemaine = "Vendredi";
-		break;
-	case 7:
-		jSemaine = "Samedi";
-		break;
-	default:
-		break;
-	}
-
 	//Blynk.virtualWrite(V2, jSemaine);
 	switch (mode)
 	{
@@ -354,7 +224,11 @@ void checkClock()
 		//changeChauffage(true);
 		break;
 	case 2:		//Mode Calendar
-		if (semaine[dayOfWeek(now()) - 2][int(hour() / 2)])
+		if (checkCreneau())
+		{
+			changeChauffage(true);
+		}
+		else if (TempNodeSalon <= tempMin)
 		{
 			changeChauffage(true);
 		}
@@ -364,7 +238,14 @@ void checkClock()
 		}
 		break;
 	case 3:		//Mode Off 
-		changeChauffage(false);
+		if (TempNodeSalon <= tempMin) {
+			changeChauffage(true);
+		}
+		else
+		{
+			changeChauffage(false);
+		}
+		
 		break;
 				
 	default:
@@ -377,25 +258,6 @@ void checkClock()
 	}
 }
 
-void printTableau() {
-	for (size_t _jour = 0; _jour < 7; _jour++)
-	{
-		for (size_t crn = 0; crn < 12; crn++)
-		{
-			if (semaine[_jour][crn])
-			{
-				Serial.print("1");
-			}
-			else
-			{
-				Serial.print("0");
-			}
-		}
-		Serial.println("");
-	}
-	Serial.println("");
-}
-
 bool changeChauffage(bool etat) {
 
 	if (etatChauffeau != etat) {
@@ -405,7 +267,7 @@ bool changeChauffage(bool etat) {
 			etatChauffeau = true;
 			Blynk.virtualWrite(V12, etatChauffeau);
 		}
-		else
+		else 
 		{
 			digitalWrite(pinRelayChauffeau, LOW);
 			etatChauffeau = false;
@@ -422,53 +284,16 @@ void setup()
 	// Debug console
 	Serial.begin(115200);
 	Serial.println("STAAAAART");
-
-
+	
 	pinMode(pinRelayChauffeau, OUTPUT);
 	digitalWrite(pinRelayChauffeau, LOW);
-
-
+	
 	//Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8442);
 	Blynk.begin(auth, ssid, pass,  "ec2-18-194-145-182.eu-central-1.compute.amazonaws.com", 8080);
 	
 	// Begin synchronizing time
 	rtc.begin();
 
-	table.onOrderChange([](int indexFrom, int indexTo) {
-		//Serial.print("Reordering: ");
-		//Serial.print(indexFrom);
-		//Serial.print(" => ");
-		//Serial.print(indexTo);
-		//Serial.println();
-	});
-
-	table.onSelectChange([](int index, bool selected) {
-
-		String msg = "";
-
-		int _jour = jour - 1;
-		if (selected) {
-			semaine[_jour][index] = true;
-			table.updateRow(index, makeHeure(index), "ON");
-		}
-		else {
-			semaine[_jour][index] = false;
-			Blynk.virtualWrite(V11, "update", index, makeHeure(index), "OFF");
-		}
-
-		// send to serveur pour save
-		msg = compresseCalendar();
-		
-		Serial.print("msg : ");
-		Serial.println(msg);
-		/*Serial.print("  Size : ");
-		Serial.println(sizeof(msg));*/
-		Blynk.virtualWrite(V0, msg);		//Put calandar to serveur
-
-	});
-
-	Blynk.virtualWrite(V10, jour);
-	actuTableau(jour);
 	//delay(1000);
 	// Display digital clock every 300000 = 5 min
 	timer.setInterval(6000L, checkClock);
